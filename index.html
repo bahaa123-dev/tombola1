@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giveaway Number Selection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+            gap: 10px;
+            justify-content: center;
+            max-width: 600px;
+            margin: auto;
+        }
+
+        .number-button {
+            width: 50px;
+            height: 50px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .number-button:hover {
+            background-color: #d4edda;
+        }
+
+        .number-button.disabled {
+            background-color: #ffcccc;
+            cursor: not-allowed;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-size: 14px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input {
+            width: 200px;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        @media (max-width: 400px) {
+            .grid {
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Giveaway: Choose Your Number</h1>
+    <p>Select a number below. Once chosen, it cannot be selected again.</p>
+
+    <form id="userForm">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+
+        <label for="phone">Phone Number:</label>
+        <input type="tel" id="phone" name="phone" required>
+
+        <button type="submit">Submit</button>
+    </form>
+
+    <div class="grid" id="numberGrid">
+        <!-- Buttons will be dynamically generated here -->
+    </div>
+
+    <script>
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBBTCAbyfV30t6y8VGUWiriguBAKlxO6QM",
+            authDomain: "tombola-89370.firebaseapp.com",
+            projectId: "tombola-89370",
+            storageBucket: "tombola-89370.firebasestorage.app",
+            messagingSenderId: "615332422925",
+            appId: "1:615332422925:web:0a6ff9eb1fa914ef953c44",
+            measurementId: "G-6Q01NFVXLE"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const grid = document.getElementById('numberGrid');
+        const form = document.getElementById('userForm');
+        let userName = '';
+        let userPhone = '';
+
+        // Fetch chosen numbers from Firebase
+        db.collection('chosenNumbers').get().then(snapshot => {
+            snapshot.forEach(doc => {
+                const number = doc.id; // Document ID is the number
+                const button = document.getElementById(`button-${number}`);
+                if (button) {
+                    button.classList.add('disabled');
+                    button.innerText = 'Taken';
+                    button.disabled = true;
+                }
+            });
+        });
+
+        // Handle form submission
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            userName = document.getElementById('name').value;
+            userPhone = document.getElementById('phone').value;
+
+            // Hide form after submission
+            form.style.display = 'none';
+        });
+
+        // Add click event to each button
+        for (let i = 1; i <= 42; i++) {
+            const button = document.createElement('button');
+            button.innerText = i;
+            button.classList.add('number-button');
+            button.id = `button-${i}`;
+            grid.appendChild(button);
+
+            button.addEventListener('click', () => {
+                if (!button.classList.contains('disabled')) {
+                    if (!userName || !userPhone) {
+                        alert('Please enter your name and phone number first.');
+                        return;
+                    }
+
+                    button.classList.add('disabled');
+                    button.innerText = 'Taken';
+                    button.disabled = true;
+
+                    // Save chosen number to Firebase
+                    db.collection('chosenNumbers').doc(String(i)).set({
+                        name: userName,
+                        phone: userPhone
+                    }).then(() => {
+                        alert(`You selected number: ${i}`);
+                    }).catch(err => console.error('Error saving data:', err));
+                }
+            });
+        }
+    </script>
+</body>
+</html>
